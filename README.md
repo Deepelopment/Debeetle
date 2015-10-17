@@ -1,3 +1,3 @@
 # Deepelopment/Debeetle
 
-PHP Debug tool
+PHP Debug Tool
