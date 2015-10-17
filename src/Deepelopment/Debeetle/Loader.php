@@ -8,8 +8,10 @@
 
 namespace Deepelopment\Debeetle;
 
+use Exception;
 use ErrorException;
 use RuntimeException;
+use Deepelopment\Debeetle\XML\ConfigParser;
 
 /**
  * PHP Debug Tool loader.
@@ -36,14 +38,14 @@ class Loader
      *
      * @var string
      */
-    protected static $configPath;
+    protected static $configPath = '';
 
     /**
      * Flag specifying that settings are parsed already
      *
      * @var bool
      */
-    protected $settingsParsed;
+    protected static $settingsParsed;
 
     /**
      * Settings parsed from passed XML configuration file
@@ -71,20 +73,24 @@ class Loader
      */
     public static function startup(
         $configPath,
+        $env = 'production',
         array $scriptStartupState,
         array $startupState,
-        $env                      = 'production',
-        array $settings           = array()
+        array $settings = array()
     )
     {
-        if (
-            (is_null($configPath) ? NULL : realpath($configPath)) ===
-            self::$configPath
-        ) {
-            // Instance already initialized.
-
-            return;
+        if (is_null($configPath)) {
+            if (self::$settings === $settings) {
+                // Instance already initialized
+                return;
+            }
+        } else {
+            if (realpath($configPath) === self::$configPath) {
+                // Instance already initialized
+                return;
+            }
         }
+
         self::$configPath = is_null($configPath) ? NULL : realpath($configPath);
         switch ($env) {
             case 'development':
@@ -104,28 +110,38 @@ class Loader
             self::$instance = new Tool_Stub;
             return;
         }
-        self::$settingsParsed = false;
-        $settings = self::getSettings();
+        self::$settingsParsed = FALSE;
+        $settings = self::getSettings() + array(
+            'shortAlias' => 'd'
+        );
 
         $shortAlias = $settings['shortAlias'];
         class_exists($shortAlias);
         if (empty($settings['launch'])) {
-            self::$instance = new Debeetle_Stub;
+            self::$instance = new Tool_Stub;
         } else {
-            self::$instance = new Debeetle($settings);
-            // Load plugins
-            foreach ($settings['plugins'] as $plugin) {
-                if (class_exists($plugin)) {
-                    /**
-                     * @var Debeetle_Plugin_Interface
-                     */
-                    $plugin = new $plugin;
-                    $plugin->setInstance($instance);
-                    $plugin->init();
+            try {
+                self::$instance = new Tool($settings);
+                // Load plugins
+                foreach ($settings['plugins'] as $plugin) {
+                    if (class_exists($plugin)) {
+                        /**
+                         * @var Debeetle_Plugin_Interface
+                         */
+                        $plugin = new $plugin;
+                        $plugin->setInstance($instance);
+                        $plugin->init();
+                    }
+                }
+            } catch (Exception $exception) {
+                if (self::ENV_PROD != self::$settings['env']) {
+                    throw $exception;
+                } else {
+                    self::$instance = new Tool_Stub;
                 }
             }
-            call_user_func(array($shortAlias, 'setInstance'), $instance);
         }
+        call_user_func(array($shortAlias, 'setInstance'), self::$instance);
     }
 
     /**
@@ -186,6 +202,7 @@ class Loader
                     'Missing required functions: %s',
                     implode(', ', $missing)
                 )
+            );
         }
 
         return TRUE;

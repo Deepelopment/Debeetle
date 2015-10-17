@@ -8,99 +8,109 @@
 
 namespace Deepelopment\Debeetle;
 
+use DirectoryIterator;
+use InvalidArgumentException;
+use Deepelopment\HTTP\Request;
+use Deepelopment\Debeetle\Tree;
+use Deepelopment\Debeetle\View\HTML;
+
 /**
- * PHP Debug Tool.
+ * PHP Debug Tool main class.
  *
  * @package Deepelopment/Debeetle
  * @author  deepeloper ({@see https://github.com/deepeloper})
+ * @todo    Implement <dump labelTraceOffset="0" labelMaxCount="0" />
+ * @todo    Implement Debeetle::checkpoint() ? plugin?
  */
-class Tool
+class Tool implements ITool
 {
     /**
      * Specifies to skip any actions if TRUE
      *
      * @var bool
      */
-    protected $skip = TRUE;
+    protected $_skip = TRUE;
 
     /**
      * Launch flag
      *
      * @var bool
      */
-    protected $launch;
+    protected $_launch;
 
     /**
      * Settings
      *
      * @var array
      */
-    protected $settings;
+    protected $_settings;
 
     /**
      * Tabs storage
      *
      * @var Tree
      */
-    protected $tab;
+    protected $_tab;
 
     /**
      * View
      *
-     * @var View_Interface
+     * @var IView
      */
-    protected $view;
+    protected $_view;
 
     /**
      * Default options
      *
      * @var array
      */
-    protected $options = array();
+    protected $_options = array();
 
     /**
      * Array of printed labels to limit output by label
      *
      * @var array
      */
-    protected $labels = array();
+    protected $_labels = array();
 
     /**
      * Plugins, array containing class names as keys and objects as values
      *
      * @var array
      */
-    protected $plugins = array();
+    protected $_plugins = array();
 
     /**
      * Virtual methods
      *
      * @var array
      */
-    protected $methods = array();
+    protected $_methods = array();
 
     /**
      * Trace info
      *
-     * @var array|NULL
+     * @var array|null
      */
-    protected $trace;
+    protected $_trace;
 
     /**
      * Internal benches
      *
      * @var array
      */
-    protected $bench;
+    protected $_bench;
 
     /**
+     * Constructor
+     *
      * @param array $settings  Array of settings
      * @see   Loader::startup()
      */
     public function __construct(array $settings)
     {
-        $this->launch = !empty($settings['launch']);
-        if ($this->launch) {
+        $this->_launch = !empty($settings['launch']);
+        if ($this->_launch) {
             $this->init($settings);
         }
     }
@@ -108,42 +118,41 @@ class Tool
     /**
      * Magic caller
      *
-     * Calls methods registred using Tool::registerMethod().
+     * Calls methods registred using Debeetle::registerMethod().
      *
      * @param  string $method  Method name
      * @param  array  $args    Arguments
      * @return mixed
-     * @see    Tool::registerMethod()
-     * @see    TraceAndRun::init()
+     * @see    Debeetle::registerMethod()
+     * @see    Debeetle_TraceAndRun::init()
      */
     public function __call($method, array $args)
     {
         $this->startInternalBench();
-        $result = NULL;
-        if (isset($this->methods[$method])) {
+        $result = null;
+        if (isset($this->_methods[$method])) {
             $this->setTrace(1);
-            $result = call_user_func_array($this->methods[$method], $args);
+            $result = call_user_func_array($this->_methods[$method], $args);
             $this->resetTrace();
         }
         $this->finishInternalBench();
-
         return $result;
     }
 
     /**
-     * Saves method caller.
+     * Save method caller
      *
      * @param  int $offset  Offset in debug_backtrace() result
      * @return void
      */
     public function setTrace($offset)
     {
-        if (!$this->trace) {
+        if (!$this->_trace) {
             $trace =
                 version_compare(PHP_VERSION, '5.3.6', '>=')
                 ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)
                 : debug_backtrace();
-            $this->trace = array(
+            $this->_trace = array(
                 'file' => $trace[$offset]['file'],
                 'line' => $trace[$offset]['line']
             );
@@ -151,49 +160,52 @@ class Tool
     }
 
     /**
-     * Returns method caller.
+     * Returns method caller
      *
      * @return array
      */
     public function getTrace()
     {
-        return $this->trace;
+        return $this->_trace;
     }
 
     /**
-     * Resets method caller.
+     * Reset method caller
      *
      * @return void
      */
     public function resetTrace()
     {
-        $this->trace = NULL;
+        $this->_trace = null;
     }
 
     /**
-     * Registers method.
+     * Register method
      *
      * @param  string   $name      Method name
      * @param  callback $handler   Method handler
      * @param  bool     $override  Override existent handler
      * @return void
-     * @throws Exception
+     * @throws InvalidArgumentException
      */
     public function registerMethod($name, array $handler, $override = FALSE)
     {
         // Check if handler is callable
         if (!is_callable($handler)) {
-            throw new Exception(
-                "Invalid callback",
-                Exception::INVALID_CALLBACK
-            );
+            if (self::ENV_PROD != self::$settings['env']) {
+                throw new InvalidArgumentException("Invalid callback");
+            } else {
+                return;
+            }
         }
 
         // Check if method is already registered
-        if (!$override && isset($this->methods[$name])) {
-            throw new Exception(
-                "Method {$name} is already registered",
-                Exception::DUPLICATE_METHOD
+        if (!$override && isset($this->_methods[$name])) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    "Method %s already registered",
+                    $name
+                )
             );
         }
 
@@ -201,11 +213,11 @@ class Tool
         if (
             is_array($handler) &&
             is_object($handler[0]) &&
-            $handler[0] instanceof Plugin_Interface
+            $handler[0] instanceof Debeetle_Plugin_Interface
         ) {
-            $this->plugins[get_class($handler[0])] = $handler[0];
+            $this->_plugins[get_class($handler[0])] = $handler[0];
         }
-        $this->methods[$name] = $handler;
+        $this->_methods[$name] = $handler;
     }
 
     /**
@@ -217,9 +229,9 @@ class Tool
      */
     public function callPluginMethod($method, array $args = array())
     {
-        foreach (array_keys($this->plugins) as $plugin) {
+        foreach (array_keys($this->_plugins) as $plugin) {
             call_user_func_array(
-                array($this->plugins[$plugin], $method),
+                array($this->_plugins[$plugin], $method),
                 $args
             );
         }
@@ -232,75 +244,77 @@ class Tool
      */
     public function getSettings()
     {
-        return $this->settings;
+        return $this->_settings;
     }
 
     /**
-     * Sets instance to the plugins.
+     * Sets self instance to the plugins.
      *
      * @return void
      */
     public function setInstance()
     {
-        foreach (array_keys($this->plugins) as $plugin) {
-            $this->plugins[$plugin]->setInstance($this);
+        foreach (array_keys($this->_plugins) as $plugin) {
+            $this->_plugins[$plugin]->setInstance($this);
         }
     }
 
     /**
-     * Sets view instance.
+     * Set view instance
      *
-     * @param  View_Interface $view  View object
+     * @param  IView $view  View object
      * @return void
+     * @throws InvalidArgumentException
      */
-    public function setView(View_Interface $view)
+    public function setView(IView $view)
     {
-        if ($view instanceof View_Interface) {
-            $this->view = $view;
+        if ($view instanceof IView) {
+            $this->_view = $view;
         } else {
-            throw new Exception(
-                get_class($view) .
-                " must implement View_Interface interface",
-                Exception::INVALID_CLASS_INTERFACE
+            throw new InvalidArgumentException(
+                sprintf(
+                    "%s must implement IView interface",
+                    get_class($view)
+                )
             );
         }
     }
 
     /**
-     * Returns view instance.
+     * Returns view instance
      *
-     * @return View_Interface
+     * @return IView
      * @todo   Think about registerView
      */
     public function getView()
     {
-        if (!$this->view) {
+        if (!$this->_view) {
             /*
             $data = new Deepelopment_EventData(
-                array('class' => 'View_HTML')
+                array('class' => 'Debeetle_View_HTML')
             );
             if (!$this->_skip) {
                 $this->_evt->fire('bebeetle_on_get_view', $data);
             }
             $this->_view = new $data->class($this->_settings);
             */
-            $this->view = new View_HTML($this->settings);
+            $this->_view = new HTML($this->_settings);
             /*
-            if (!($this->_view instanceof View_Interface)){
-                throw new Exception(
+            if (!($this->_view instanceof IView)){
+                throw new Debeetle_Exception(
                     $data->class .
-                        " must implement View_Interface interface",
-                    Exception::INVALID_CLASS_INTERFACE
+                        " must implement IView interface",
+                    Debeetle_Exception::INVALID_CLASS_INTERFACE
                 );
             }
             */
-            $this->view->setTab($this->tab);
+            $this->_view->setTab($this->_tab);
         }
-        return $this->view;
+        return $this->_view;
     }
 
     /**
-     * Sets default options for methods supporting options.
+     * Set default options for methods supporting options
      *
      * @param  string $target   Target method name
      * @param  array  $options  Array of options
@@ -308,15 +322,15 @@ class Tool
      */
     public function setDefaultOptions($target, array $options)
     {
-        if ($this->skip) {
+        if ($this->_skip) {
             return;
         }
-        $this->settings['defaults']['options'][$target] = $options;
-        $this->setInstance();
+        $this->_settings['defaults']['options'][$target] = $options;
+        $this->setInstance($this);
     }
 
     /**
-     * Selects target tab.
+     * Specify target tab
      *
      * Example:
      * <code>
@@ -331,7 +345,7 @@ class Tool
      */
     public function tab($tab, $before = '')
     {
-        if ($this->skip) {
+        if ($this->_skip) {
             return;
         }
         $this->startInternalBench();
@@ -341,8 +355,8 @@ class Tool
         }
         */
         $options =
-            isset($this->options['write'])
-            ? $this->options['write']
+            isset($this->_options['write'])
+            ? $this->_options['write']
             : array();
         if(
             isset($options['encoding']) &&
@@ -358,12 +372,12 @@ class Tool
                     );
             }
         }
-        $this->tab->select($tab, $before, FALSE);
+        $this->_tab->select($tab, $before, FALSE);
         $this->finishInternalBench();
     }
 
     /**
-     * Writes string to debug output.
+     * Write string to debug output
      *
      * Example:
      * <code>
@@ -378,17 +392,17 @@ class Tool
      */
     public function write($string, array $options = array())
     {
-        if ($this->skip) {
+        if ($this->_skip) {
             return;
         }
         if (empty($options['skipInternalBench'])) {
             $this->startInternalBench();
         }
-        if (isset($this->options['write'])) {
-            $options += $this->options['write'];
+        if (isset($this->_options['write'])) {
+            $options += $this->_options['write'];
         }
         if (isset($options['tab'])) {
-            $tab = $this->tab->getLast();
+            $tab = $this->_tab->getLast();
             $caption = $options['tab'];
             if(
                 isset($options['encoding']) &&
@@ -402,12 +416,12 @@ class Tool
                         $options['encoding']
                     );
             }
-            $this->tab->select($caption);
+            $this->_tab->select($caption);
         }
         $string = $this->getView()->renderString($string, $options);
-        $this->tab->send($string);
+        $this->_tab->send($string);
         if (isset($tab)) {
-            $this->tab->select($tab);
+            $this->_tab->select($tab);
         }
         if (empty($options['skipInternalBench'])) {
             $this->finishInternalBench();
@@ -415,7 +429,7 @@ class Tool
     }
 
     /**
-     * Verifies printing data by label condition.
+     * Verify printing data by label condition
      *
      * @param  string $method   Debeetle method name
      * @param  string $label    Label
@@ -424,46 +438,46 @@ class Tool
      */
     public function checkLabel($method, $label, array $options)
     {
-        if (empty($this->labels[$method])) {
-            $this->labels[$method] = array();
+        if (empty($this->_labels[$method])) {
+            $this->_labels[$method] = array();
         }
-        if (empty($this->labels[$method][$label])) {
-            $this->labels[$method][$label] = 1;
+        if (empty($this->_labels[$method][$label])) {
+            $this->_labels[$method][$label] = 1;
         } else {
-            $this->labels[$method][$label]++;
+            $this->_labels[$method][$label]++;
         }
         return
             empty($options['label_limit'])
             ? TRUE
-            : $this->labels[$method][$label] <= $options['label_limit'];
+            : $this->_labels[$method][$label] <= $options['label_limit'];
     }
 
     /**
-     * Returns internal benches.
+     * Returns internal benches
      *
      * @return array
      */
     public function getInternalBenches()
     {
-        return $this->bench;
+        return $this->_bench;
     }
 
     /**
-     * Initialize tool according to passed settings.
+     * Initialize Debeetle according to the settings
      *
      * @param  array $settings  Array of settings
      * @return void
      */
     protected function init(array $settings)
     {
-        $this->bench = array(
-            'scriptInitState' => $settings['scriptInitState'],
-            'initState'       => $settings['initState'],
+        $this->_bench = array(
+            'scriptStartupState' => $settings['scriptStartupState'],
+            'startupState'       => $settings['startupState'],
             'skip'            => FALSE,
             'pmu'             => function_exists('memory_get_peak_usage')
         );
-        unset($settings['scriptInitState'], $settings['initState']);
-        $this->settings =
+        unset($settings['scriptStartupState'], $settings['startupState']);
+        $this->_settings =
             $settings +
             array(
                 'cookieName'   => 'debeetle_' . md5($_SERVER['HTTP_HOST']),
@@ -473,8 +487,8 @@ class Tool
                 )
             );
 
-        $request = Deepelopment_HTTPRequest::getInstance();
-        $cookie = $request->get($this->settings['cookieName'], NULL, 'c');
+        $request = new Request;
+        $cookie = $request->get($this->_settings['cookieName'], null, INPUT_COOKIE);
         if ($cookie) {
             $cookie = json_decode($cookie, TRUE);
             if(!is_array($cookie)){
@@ -483,17 +497,17 @@ class Tool
         } else {
             $cookie = array();
         }
-        $this->settings['clientCookie'] = $cookie;
-        $this->skip = empty($this->settings['clientCookie']['launch']);
+        $this->_settings['clientCookie'] = $cookie;
+        $this->_skip = empty($this->_settings['clientCookie']['launch']);
         if (
             isset($cookie['disabledTabs']) &&
             is_array($cookie['disabledTabs'])
         ) {
             // var_dump($cookie['disabledTabs']);#die;###
-            $this->settings['disabledTabs']['client'] =
+            $this->_settings['disabledTabs']['client'] =
                 $cookie['disabledTabs'];
         }
-        $this->tab = new Tree($this->settings);
+        $this->_tab = new Tree($this->_settings);
         #var_dump($this->_settings['disabledTabs']);die;###
 
         /*
@@ -503,31 +517,31 @@ class Tool
         */
 
         $scanForDefaults =
-            empty($this->settings['defaults']['skin']) ||
-            empty($this->settings['defaults']['theme']);
+            empty($this->_settings['defaults']['skin']) ||
+            empty($this->_settings['defaults']['theme']);
         if (
             $scanForDefaults ||
             (
                 !in_array(
                     'Settings',
-                    $this->settings['disabledTabs']['server']
+                    $this->_settings['disabledTabs']['server']
                 ) &&
                 !in_array(
                     'Settings|Panel',
-                    $this->settings['disabledTabs']['server']
+                    $this->_settings['disabledTabs']['server']
                 )
             )
         ) {
             $skins = array();
             $skinDir = new DirectoryIterator(
-                $this->settings['path']['resources'] . '/skin'
+                $this->_settings['path']['resources'] . '/skin'
             );
             foreach ($skinDir as $skin) {
                 if ($skin->isDot() || !$skin->isDir()) {
                     continue;
                 }
                 $themePath =
-                    $this->settings['path']['resources'] . '/skin/' .
+                    $this->_settings['path']['resources'] . '/skin/' .
                     $skin->getBasename() . '/theme';
                 if (!is_dir($themePath)) {
                     continue;
@@ -549,44 +563,44 @@ class Tool
                 }
             }
             if (sizeof($skins)) {
-                $this->settings['skins'] = $skins;
+                $this->_settings['skins'] = $skins;
                 if ($scanForDefaults) {
                     list($skin, $themes) = each($skins);
                     list(, $theme) = each($themes);
-                    $this->settings['defaults'] += array(
+                    $this->_settings['defaults'] += array(
                         'skin'  => $skin,
                         'theme' => $theme
                     );
                 }
             }
         }
-        $this->bench['onLoad'] = array(
+        $this->_bench['onLoad'] = array(
             'includedFiles'   =>
                 sizeof(get_included_files()) -
-                $this->bench['initState']['includedFiles'] + 1,
+                $this->_bench['startupState']['includedFiles'] + 1,
             'peakMemoryUsage' => 0,
             'memoryUsage'     =>
-                memory_get_usage() - $this->bench['initState']['memoryUsage']
+                memory_get_usage() - $this->_bench['startupState']['memoryUsage']
         );
-        if ($this->bench['pmu']) {
-            $this->bench['onLoad']['peakMemoryUsage'] =
+        if ($this->_bench['pmu']) {
+            $this->_bench['onLoad']['peakMemoryUsage'] =
                 memory_get_peak_usage() -
-                $this->bench['initState']['peakMemoryUsage'];
+                $this->_bench['startupState']['peakMemoryUsage'];
         }
-        $this->bench['onLoad']['time'] =
+        $this->_bench['onLoad']['time'] =
             microtime(TRUE) -
-            $this->bench['initState']['time'];
-        $this->bench['total'] = $this->bench['onLoad'] + array('qty' => 0);
+            $this->_bench['startupState']['time'];
+        $this->_bench['total'] = $this->_bench['onLoad'] + array('qty' => 0);
     }
 
     protected function startInternalBench()
     {
-        $this->bench['total']['qty']++;
-        $this->bench['current'] = array(
+        $this->_bench['total']['qty']++;
+        $this->_bench['current'] = array(
             'includedFiles'   => sizeof(get_included_files()),
             'memoryUsage'     => memory_get_usage(),
             'peakMemoryUsage' =>
-                $this->bench['pmu']
+                $this->_bench['pmu']
                     ? memory_get_peak_usage()
                     : 0,
             'time'            => microtime(TRUE)
@@ -597,18 +611,18 @@ class Tool
     protected function finishInternalBench()
     {
         // $e = new Exception;echo '<pre>'/*, var_export($this->_bench['current'], TRUE)*/, $e->getTraceAsString(), '</pre>';###
-        $this->bench['total']['includedFiles'] +=
+        $this->_bench['total']['includedFiles'] +=
             sizeof(get_included_files()) -
-            $this->bench['current']['includedFiles'];
-        $this->bench['total']['memoryUsage'] +=
-            memory_get_usage() - $this->bench['current']['memoryUsage'];
-        if ($this->bench['pmu']) {
-            $this->bench['total']['peakMemoryUsage'] +=
+            $this->_bench['current']['includedFiles'];
+        $this->_bench['total']['memoryUsage'] +=
+            memory_get_usage() - $this->_bench['current']['memoryUsage'];
+        if ($this->_bench['pmu']) {
+            $this->_bench['total']['peakMemoryUsage'] +=
                 memory_get_peak_usage() -
-                $this->bench['current']['peakMemoryUsage'];
+                $this->_bench['current']['peakMemoryUsage'];
         }
-        $this->bench['total']['time'] +=
-            microtime(TRUE) - $this->bench['current']['time'];
-        unset($this->bench['current']);
+        $this->_bench['total']['time'] +=
+            microtime(TRUE) - $this->_bench['current']['time'];
+        unset($this->_bench['current']);
     }
 }

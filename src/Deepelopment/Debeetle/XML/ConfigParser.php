@@ -6,11 +6,11 @@
  * @license Unlicense http://unlicense.org/
  */
 
-namespace Deepelopment\Debeetle;
+namespace Deepelopment\Debeetle\XML;
 
 use RuntimeException;
-use Deepelopment\XML;
-use Deepelopment\HTTP;
+use Deepelopment\XML\Parser;
+use Deepelopment\HTTP\Request;
 
 /**
  * XML configure parser.

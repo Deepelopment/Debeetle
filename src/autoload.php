@@ -6,7 +6,7 @@
  * @license Unlicense http://unlicense.org/
  */
 
-require_once realpath(__DIR__) . '/../../../autoload.php';
+require_once realpath(__DIR__) . '/../vendor/autoload.php';
 
 $_DEEBETLE_STARTUP_STATE = array(
     'time'            => microtime(TRUE),
