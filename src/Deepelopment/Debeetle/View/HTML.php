@@ -369,7 +369,7 @@ class HTML implements IView
                     isset($bench[$type]) &&
                     isset($bench[$type]['format'])
                         ? $bench[$type]['format']
-                        : 'Y/m/d H:i:s O (T)';
+                        : 'Y/m/d H:i:s O';
                 return
                     array(
                         date($format, $iBench['scriptStartupState'][$type])

@@ -1,0 +1,81 @@
+<?php
+/**
+ * Debeetle PHP debug
+ *
+ * Debeetle initialization code template.
+ *
+ * @copyright Copyright (c) XXI deepelopment.com (http://deepelopment.com/)
+ * @author    Anton Leontiev (http://deepelopment.com/weregod)
+ * @category  PHP_Debug
+ * @package   Debeetle
+ * @see       Debeetle_View_HTML::get()
+ */
+
+if (empty($this)) {
+    $protocol = @getenv('SERVER_PROTOCOL');
+    if (!$protocol) {
+        $protocol = 'HTTP/1.1';
+    }
+    header(sprintf('%s 404 Not Found', $protocol));
+    die;
+}
+
+### {
+?>
+<!-- style type="text/css">
+
+#debeetleFrame.onTop
+{
+    top: auto;
+    bottom: 0;
+}
+
+#debeetleFrame.onBottom
+{
+    top: auto;
+    bottom: 0;
+}
+
+</style -->
+<?php
+### }
+?>
+<script type="text/javascript">
+// <![CDATA[
+var debeetleFrame = document.createElement('IFRAME');
+debeetleFrame.id = 'debeetleFrame';
+debeetleFrame.name = 'debeetleFrame';
+/*
+debeetleFrame.style.position = 'fixed';
+debeetleFrame.style.top = 0;
+debeetleFrame.style.left = 0;
+debeetleFrame.style.width = '100%';
+debeetleFrame.style.height = '100%';
+debeetleFrame.style.border = 'none';
+debeetleFrame.style.margin = 0;
+debeetleFrame.style.padding = 0;
+debeetleFrame.style.background = 'transparent';
+debeetleFrame.style.zIndex = '19770404';
+*/
+
+var $d =
+{
+    onload: function(iframe)
+    {
+        iframe.$d.startup(
+            <?php echo json_encode($data); ?>,
+            <?php echo $tabs; ?>,
+            document.body.clientHeight
+        );
+    }
+}
+document.body.appendChild(debeetleFrame);
+debeetleFrame.src = '<?php echo $this->_settings['path']['script']; ?>?source=frame&skin=<?php echo $skin;?>&theme=<?php echo $theme;?>&v=<?php echo $data['version'];?>&h=<?php
+
+echo $data['hash'];
+if (!empty($this->_settings['developerMode'])) {
+    echo '&dev=1';
+}
+?>';
+// ]]>
+</script>

@@ -1,0 +1,24 @@
+<?php
+/**
+ * Debeetle PHP debug
+ *
+ * Debeetle trace method template.
+ *
+ * @copyright Copyright (c) XXI deepelopment.com (http://deepelopment.com/)
+ * @author    Anton Leontiev (http://deepelopment.com/weregod)
+ * @category  PHP_Debug
+ * @package   Debeetle_Plugin_PHPInfo
+ * @see       Debeetle_View_HTML::get()
+ */
+
+if (empty($this)) {
+    $protocol = @getenv('SERVER_PROTOCOL');
+    if (!$protocol) {
+        $protocol = 'HTTP/1.1';
+    }
+    header(sprintf('%s 404 Not Found', $protocol));
+    die;
+}
+?>
+<a id="id_phpinfo" style="display: none;" href="<?php $this->_settings['path']['script']; ?>?plugin=<?php echo rawurlencode(get_class($this));?>" target="_blank">Open</a>
+<button onclick="$('#id_phpinfo')[0].click(); return true;">Open</button>

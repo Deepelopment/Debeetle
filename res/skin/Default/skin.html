@@ -1,0 +1,103 @@
+<!DOCTYPE
+    html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
+>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <title></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<!--++++++++++++++++++++++++++++ template.bar { +++++++++++++++++++++++++++++-->
+<div class="template" id="bar">
+<div class="bar">
+<table>
+<tbody>
+<tr>
+    <!--td class="selectionDisabled"><span onclick="return $d.Panel.changePosition(this);" class="locale-barToBottom changePosition">&nbsp;</span></td-->
+    <td class="selectionDisabled"><span onclick="return $d.Panel.toggleClientLaunch(this);" class="locale-panelOff toggleClientLaunch">&equiv;</span></td>
+    <td onclick="$d.Panel.toggleVisibility(this);" class="locale-panelHide info">
+        <span>
+            <span class="locale-serverTime"></span> &nbsp;&mdash;&nbsp;
+            <span class="locale-pageTotalTime"></span> &nbsp;&mdash;&nbsp;
+            <span class="locale-memoryUsage"></span> / <span class="locale-peakMemoryUsage"></span>&nbsp;&mdash;&nbsp;
+            <span class="locale-includedFiles"></span>
+        </span>
+    </td>
+    <td class="locale-reloadPage reloadPage"></td>
+    <td class="splitter selectionDisabled"></td>
+    <td class="homepage"><a class="locale-visitHomepage" href="http://deepelopment.com/projects/debeetle/" onmouseover="this.target = '_blank';" onclick="this.blur(); return true;">// Debeetle <span class="visibleVersion"></span></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="bottom-line" class="bottom-line"></div>
+</div>
+<!--++++++++++++++++++++++++++++ } template.bar +++++++++++++++++++++++++++++-->
+
+<!--++++++++++++++++++++++++++ template.panel { +++++++++++++++++++++++++++++-->
+<div class="template" id="panel">
+<div id="dPanel" class="ui-widget-content" style="display: block;">
+<div class="panel ___ui-widget-content">{$tabs}
+<div id="resize-line" title="Click and hold to resize the panel"></div>
+<div class="bottom-line"></div>
+</div>
+</div>
+</div>
+<!--++++++++++++++++++++++++++ } template.panel +++++++++++++++++++++++++++++-->
+
+<!--+++++++++++++++++++++++++ template.tabList { ++++++++++++++++++++++++++++-->
+<div class="template" id="tabList">
+<!--
+<div class="tabList" ptabid="{$tabId}">
+<ul class="tabs level_{$level} tab_{$postfix}">{$controls}</ul>
+</div>
+-->
+</div>
+<!--+++++++++++++++++++++++++ } template.tabList ++++++++++++++++++++++++++++-->
+
+<!--++++++++++++++++++++++++ template.tabControl { ++++++++++++++++++++++++++-->
+<div class="template" id="tabControl">
+<!--
+<li class="{$classes}" tabid="{$tabId}" onclick="return $d.Panel.Tab.click(this);"><span>{$caption}</span>{$activeTail}</li>
+-->
+</div>
+<!--++++++++++++++++++++++++ } template.tabControl ++++++++++++++++++++++++++-->
+
+<!--++++++++++++++++++++++ template.tabControlTail { ++++++++++++++++++++++++-->
+<div class="template" id="tabControlTail">
+<div><div>{$caption}</div></div>
+</div>
+<!--++++++++++++++++++++++ } template.tabControlTail ++++++++++++++++++++++++-->
+
+<!--+++++++++++++++++++++++ template.level1Opener { +++++++++++++++++++++++++-->
+<div class="template" id="level1Opener">
+<!--
+<div id="dTab" class="ui-widget-content">
+-->
+</div>
+<!--+++++++++++++++++++++++ } template.level1Opener +++++++++++++++++++++++++-->
+
+<!--+++++++++++++++++++++++ template.level1Closer { +++++++++++++++++++++++++-->
+<div class="template" id="level1Closer">
+<!--
+</div></div>
+-->
+</div>
+<!--+++++++++++++++++++++++ } template.level1Closer +++++++++++++++++++++++++-->
+
+<!--++++++++++++++++++++ template.tabContent { ++++++++++++++++++++++-->
+<div class="template" id="tabContent">
+<div class="tab level_{$level} tab_{$postfix}{$active}" style="display: none;" ptabid="{$tabId}">{$content}</div>
+</div>
+<!--++++++++++++++++++++ } template.tabContent ++++++++++++++++++++++-->
+
+<!-- Do not delete following script -->
+<script type="text/javascript">
+parent.$d.View.load(document.body);
+parent.$d.View.Container.display();
+</script>
+
+</body>
+</html>

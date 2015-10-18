@@ -1,0 +1,286 @@
+<?php
+/**
+ * Debeetle PHP debug
+ *
+ * Debeetle trace and dump methods template.
+ * Krumo dump method template.
+ *
+ * @copyright Copyright (c) XXI deepelopment.com (http://deepelopment.com/)
+ * @author    Kaloyan K. Tsvetkov <kaloyan@kaloyan.info>
+ * @author    Anton Leontiev (http://deepelopment.com/weregod)
+ * @category  PHP_Debug
+ * @package   Debeetle
+ * @see       Debeetle_View_HTML::get()
+ */
+
+if (empty($this)) {
+    $protocol = @getenv('SERVER_PROTOCOL');
+    if (!$protocol) {
+        $protocol = 'HTTP/1.1';
+    }
+    header(sprintf('%s 404 Not Found', $protocol));
+    die;
+}
+switch ($part) {
+
+    // settings {
+
+    case 'settings':
+?>
+<form name="t_n_d_settings" action="#">
+<table class="settings">
+<tbody>
+<tr>
+    <td class="left"><input type="checkbox" id="t_n_d_hide_dump" name="hide_dump" /></td>
+    <td><label for="t_n_d_hide_dump">Hide dump</label>
+</tr>
+<tr>
+    <td class="left"><input type="checkbox" id="t_n_d_hide_trace" name="hide_trace" /></td>
+    <td><label for="t_n_d_hide_trace">Hide trace</label>
+</tr>
+<tr>
+    <td class="left"><input type="checkbox" id="t_n_d_expand_trace_args" name="expand_trace_args" /></td>
+    <td><label for="t_n_d_expand_trace_args">Expand trace arguments</label>
+</tr>
+<tr>
+    <td class="left"><input type="checkbox" id="t_n_d_hide_trace_args" name="hide_trace_args" onclick="return $d.Plugins.TraceAndDump.onDisableTraceArgs(this);" /></td>
+    <td><label for="t_n_d_hide_trace_args">Disable trace arguments</label>
+</tr>
+<tr>
+    <td colspan="2" class="buttons">
+        <button onclick="return $d.Plugins.TraceAndDump.saveSettings(this);">Apply</button> &nbsp; &nbsp; &nbsp;
+        <button onclick="return $d.Plugins.TraceAndDump.resetSettings(this);">Discard</button>
+    </td>
+</tr>
+</tbody>
+</table>
+</form>
+<?php
+        break; // case 'settings'
+
+    // } settings
+    // trace {
+
+    case 'fieldset:trace':
+?>
+<fieldset class="trace">
+    <legend class="locale-hide" onclick="$d.Plugins.TraceAndDump.click(this);">&nbsp; trace ::
+        <?php
+            if ($label !== ''):
+                echo $label, ' ::';
+            endif;
+        ?>
+        <span><?php echo $trace; ?></span>&nbsp;
+    </legend>
+    <div class="content"><?php echo $content;?></div>
+</fieldset>
+<?php
+        break; // case 'fieldset:trace'
+    case 'header:trace':
+?>
+<table class="trace">
+<thead>
+    <tr><th>Location</th><th>Caller</th><?php if (!empty($options['displayTraceArgs'])) { ?><th>Arguments</th><?php } ?></tr>
+</thead>
+<tbody>
+<?php
+        break; // case 'header:trace'
+    case 'row:trace':
+?>
+<tr<?php echo $even ? ' class="even"' : '';?> onmouseover="$d.Plugins.TraceAndDump.onMouse(this, true);" onmouseout="$d.Plugins.TraceAndDump.onMouse(this, false);" >
+    <td class="td1"><?php echo $location;?></td>
+    <td class="td2"><?php echo $caller;?></td>
+    <?php if (!empty($options['displayTraceArgs'])) { ?><td><?php echo $args;?></td><?php } ?>
+</tr>
+<?php
+        break; // case 'row:trace'
+    case 'footer:trace':
+?>
+</tbody>
+</table>
+<?php
+        break; // case 'footer:trace'
+
+    // } trace
+    // dump {
+
+    case 'fieldset:dump':
+?>
+<fieldset class="dump">
+    <legend class="locale-hide" onclick="$d.Plugins.TraceAndDump.click(this);">&nbsp; dump ::
+        <?php
+            if ($label !== ''):
+                echo $label, ' ::';
+            endif;
+        ?>
+        <span><?php echo $trace; ?></span>&nbsp;
+    </legend>
+    <div class="content"><?php echo $content;?></div>
+</fieldset>
+<?php
+        break; // case 'fieldset'
+    case 'header:dump':
+?>
+<div class="krumo-root<?php echo empty($options['traceArgs']) ? '' : ' trace-args';?>">
+    <ul class="krumo-node krumo-first">
+<?php
+        break; // case 'header:dump'
+    case 'footer:dump':
+?>
+    </ul>
+</div>
+<?php
+        break; // case 'footer:dump'
+    case 'recursion':
+?>
+<div class="krumo-nest" style="display:none;">
+    <ul class="krumo-node">
+        <li class="krumo-child">
+            <div class="krumo-element" onMouseOver="krumo.over(this);" onMouseOut="krumo.out(this);">                            <a class="krumo-name"><big>&#8734;</big></a>
+                (<em class="krumo-type">Recursion</em>)
+            </div>
+        </li>
+    </ul>
+</div>
+<?php
+        break; // case 'recursion'
+    case 'node:start':
+?>
+<div class="krumo-nest" style="display:none;">
+    <ul class="krumo-node">
+<?php
+        break; // case 'node:start'
+    case 'node:end':
+?>
+    </ul>
+</div>
+<?php
+        break; // case 'node:end'
+    case 'entity:array':
+?>
+<li class="krumo-child">
+    <div class="krumo-element<?php echo sizeof($entity) > 0 ? ' krumo-expand' : '';?>"
+        <?php if (sizeof($entity) > 0) {?> onClick="krumo.toggle(this);"<?php } ?>
+        onMouseOver="krumo.over(this);" onMouseOut="krumo.out(this);">
+        <a class="krumo-name"><?php echo $caption;?></a>
+        (<em class="krumo-type">Array, <strong class="krumo-array-length">
+<?php echo (sizeof($entity)==1) ? ("1 element") : (sizeof($entity)." elements"); ?></strong></em>)
+<?php
+// callback ?
+if (is_callable($entity)) {
+        $_ = array_values($entity);
+        ?>
+        <span class="krumo-callback"> |
+                (<em class="krumo-type">Callback</em>)
+                <strong class="krumo-string"><?php
+                        echo htmlSpecialChars($_[0]);?>::<?php
+                        echo htmlSpecialChars($_[1]);?>();</strong></span>
+<?php
+}
+?>
+
+    </div>
+<?php
+if (sizeof($entity)) {
+    $this->krumoRenderVars($entity, $options, $nesting, '...');
+}
+?>
+</li>
+<?php
+        break; // case 'entity:array'
+    case 'entity:object':
+?>
+<li class="krumo-child">
+    <div class="krumo-element<?php echo sizeof($entity) > 0 ? ' krumo-expand' : '';?>"
+            <?php if (sizeof($entity) > 0) {?> onClick="krumo.toggle(this);"<?php } ?>
+            onMouseOver="krumo.over(this);"
+            onMouseOut="krumo.out(this);">
+
+                    <a class="krumo-name"><?php echo $caption;?></a>
+                    (<em class="krumo-type">Object</em>)
+                    <strong class="krumo-class"><?php echo get_class($entity);?></strong>
+    </div>
+<?php
+if (sizeof($entity)) {
+    $this->krumoRenderVars($entity, $options, $nesting, '...');
+}
+?>
+</li>
+<?php
+        break; // case 'entity:object'
+    case 'entity:resource':
+?>
+<li class="krumo-child">
+    <div class="krumo-element" onMouseOver="krumo.over(this);" onMouseOut="krumo.out(this);">
+        <a class="krumo-name"><?php echo $caption;?></a>
+        (<em class="krumo-type">Resource</em>)
+        <strong class="krumo-resource"><?php echo get_resource_type($entity);?></strong>
+    </div>
+</li>
+<?php
+        break; // case 'entity:resource'
+    case 'entity:string':
+        // extra ?
+        $_extra = FALSE;
+        $_ = $entity;
+        if (
+            isset($options['maxStringLength']) &&
+            $options['maxStringLength'] > 0 &&
+            mb_strLen($entity) > $options['maxStringLength']
+        ) {
+            $_ = mb_substr($entity, 0, $options['maxStringLength']) . '...';
+            $_extra = TRUE;
+        }
+?>
+<li class="krumo-child">
+<div class="krumo-element<?php echo $_extra ? ' krumo-expand' : '';?>"
+<?php if ($_extra) {?> onClick="krumo.toggle(this);"<?php } ?>
+onMouseOver="krumo.over(this);"
+onMouseOut="krumo.out(this);">
+    <a class="krumo-name"><?php echo $caption;?></a>
+    (<em class="krumo-type">String,
+            <strong class="krumo-string-length"><?php
+                    $length = mb_strlen($entity);
+                    echo $length, ' char', $length > 1 ? 's' : '';?></strong></em>)
+    <strong class="krumo-string"><?php echo htmlSpecialChars($_);?></strong>
+<?php
+// callback ?
+if (is_callable($entity)) {
+?>
+    <span class="krumo-callback"> | (<em class="krumo-type">Callback</em>) <strong class="krumo-string"><?php echo htmlSpecialChars($_);?>();</strong></span>
+<?php
+}
+?>
+</div>
+<?php if ($_extra) { ?>
+<div class="krumo-nest" style="display:none;">
+    <ul class="krumo-node">
+        <li class="krumo-child">
+            <div class="krumo-preview"><?php echo htmlSpecialChars($entity);?></div>
+        </li>
+    </ul>
+</div>
+<?php
+}
+?>
+</li>
+<?php
+        break; // case 'entity:string'
+    case 'entity:scalar':
+?>
+<li class="krumo-child">
+    <div class="krumo-element" onMouseOver="krumo.over(this);" onMouseOut="krumo.out(this);">
+        <a class="krumo-name"><?php echo $caption;?></a>
+        <?php if($part !== 'NULL') { ?>(<em class="krumo-type"><?php echo ucfirst($type);?></em>)<?php } ?>
+        <strong class="krumo-float"><?php echo $entity;?></strong>
+    </div>
+</li>
+<?php
+        break; // case 'entity:scalar'
+
+    // } dump
+
+    default:
+        $e = new Exception;echo '<pre>';die($e->getTraceAsString());###
+}
+

@@ -1,0 +1,65 @@
+<?php
+/**
+ * Debeetle PHP debug
+ *
+ * Debeetle frame template.
+ *
+ * @copyright Copyright (c) XXI deepelopment.com (http://deepelopment.com/)
+ * @author    Anton Leontiev (http://deepelopment.com/weregod)
+ * @category  PHP_Debug
+ * @package   Debeetle
+ * @see       Debeetle_Resource_Public::processRequest()
+ */
+
+if (empty($this)) {
+    $protocol = @getenv('SERVER_PROTOCOL');
+    if (!$protocol) {
+        $protocol = 'HTTP/1.1';
+    }
+    header(sprintf('%s 404 Not Found', $protocol));
+    die;
+}
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+    <title>Debeetle panel</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+    // <![CDATA[
+    var
+        args =
+            document.location.href.
+            replace(/^.*\?/, '').
+            replace(/^source=frame&/, ''),
+        date = new Date(),
+        node = document.createElement('LINK'),
+        ts =
+            args.indexOf('&dev=1') < 0
+                ? ''
+                : '&ts=' + date.getMilliseconds();
+
+    node.setAttribute('rel', 'stylesheet');
+    node.setAttribute('type', 'text/css');
+    node.setAttribute('media', 'screen');
+    node.setAttribute(
+        'href',
+        '<?php echo $settings['path']['script']; ?>?source=resource&type=css&' +
+            args + ts
+    );
+    document.getElementsByTagName('head')[0].appendChild(node);
+
+    node = document.createElement('SCRIPT');
+    node.setAttribute('type', 'text/javascript');
+    node.setAttribute(
+        'src',
+        '<?php echo $settings['path']['script']; ?>?source=resource&type=js&' +
+            args
+    );
+    document.getElementsByTagName('head')[0].appendChild(node);
+    // ]]>
+    </script>
+</head>
+<body onload="parent.$d.onload(this.window);">
+</body>
+</html>

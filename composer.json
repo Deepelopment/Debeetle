@@ -23,9 +23,10 @@
     "minimum-stability": "dev",
     "prefer-stable" : true,
     "require": {
-        "php": ">=5.3.1",
-        "Deepelopment/XML": "dev-develop",
-        "Deepelopment/HTTP": "dev-develop"
+        "php":               ">=5.3.1",
+        "Deepelopment/XML":  "dev-develop",
+        "Deepelopment/HTTP": "dev-develop",
+        "leafo/lessphp" :    "dev-master"
     },
     "autoload": {
         "psr-4": {"Deepelopment\\Debeetle\\": "src/Deepelopment/Debeetle"},

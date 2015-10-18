@@ -1,0 +1,30 @@
+<form name="settings" action="#">
+<table class="settings">
+<tbody>
+<tr>
+    <td class="left">Skin:</td>
+    <td>
+        <select name="skin" class="iSelect" onchange="$d.Panel.onSelectSkin(this);">
+        </select>
+    </td>
+</tr>
+<tr>
+    <td class="left">Color theme:</td>
+    <td>
+        <select name="theme" class="iColorTheme" onchange="$d.Panel.onSelectTheme(this);">
+        </select>
+    </td>
+</tr>
+<tr>
+    <td>Panel opacity:</td>
+    <td><a href="#" onclick="return $d.Panel.setOpacity(-1);">&laquo;&laquo;</a> <input name="opacity" type="text" class="opacity" readonly="readonly" value="" /> <a href="#" onclick="return $d.Panel.setOpacity(1);">&raquo;&raquo;</a></td>
+</tr>
+<tr>
+    <td colspan="2" class="buttons">
+        <button onclick="return $d.Panel.saveSettings(this);">Apply</button> &nbsp; &nbsp; &nbsp;
+        <button onclick="return $d.Panel.resetSettings(this);">Discard</button>
+    </td>
+</tr>
+</tbody>
+</table>
+</form>
