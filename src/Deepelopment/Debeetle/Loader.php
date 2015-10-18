@@ -67,15 +67,17 @@ class Loader
      * @param  string $configPath          Path to XML configuration file
      * @param  array  $scriptStartupState  Script entry point struct
      * @param  array  $startupState        Debeetle entry point struct
-     * @param  string $env                 'production' (by default) or 'development'
-     * @param  array  $settings            Settings to override read from XML config file
+     * @param  string $env                 'production' (by default)
+     *         or 'development'
+     * @param  array  $settings            Settings to override read from
+     *         XML configuration file
      * @return void
      */
     public static function startup(
         $configPath,
-        $env = 'production',
         array $scriptStartupState,
         array $startupState,
+        $env = 'production',
         array $settings = array()
     )
     {
@@ -91,39 +93,30 @@ class Loader
             }
         }
 
-        self::$configPath = is_null($configPath) ? NULL : realpath($configPath);
-        switch ($env) {
-            case 'development':
-                $env = self::ENV_DEV;
-                break;
-            default:
-                $env = self::ENV_PROD;
-        }
-        self::$settings = $settings + array(
-            'env'                => $env,
-            'scriptStartupState' => $scriptStartupState,
-            'startupState'       => $startupState,
+        self::$settingsParsed = FALSE;
+        self::getSettings(
+            $configPath,
+            $env,
+            $settings + array(
+                'scriptStartupState' => $scriptStartupState,
+                'startupState'       => $startupState,
+            )
         );
 
         if (!self::checkRequirements()) {
-            self::$settingsParsed = TRUE;
             self::$instance = new Tool_Stub;
             return;
         }
-        self::$settingsParsed = FALSE;
-        $settings = self::getSettings() + array(
-            'shortAlias' => 'd'
-        );
 
-        $shortAlias = $settings['shortAlias'];
+        $shortAlias = self::$settings['shortAlias'];
         class_exists($shortAlias);
-        if (empty($settings['launch'])) {
+        if (empty(self::$settings['launch'])) {
             self::$instance = new Tool_Stub;
         } else {
             try {
-                self::$instance = new Tool($settings);
+                self::$instance = new Tool(self::$settings);
                 // Load plugins
-                foreach ($settings['plugins'] as $plugin) {
+                foreach (self::$settings['plugins'] as $plugin) {
                     if (class_exists($plugin)) {
                         /**
                          * @var Debeetle_Plugin_Interface
@@ -148,27 +141,54 @@ class Loader
      * Parses and returns settings from passed configuration XML file.
      *
      * @param  string $configPath
+     * @param  string $env                 'production' (by default)
+     *         or 'development'
+     * @param  array  $settings            Settings to override read from
+     *         XML configuration file
      * @return array
      */
-    public static function getSettings($configPath = NULL)
+    public static function getSettings(
+        $configPath = NULL,
+        $env = 'production',
+        array $settings = array()
+    )
     {
-        if (!self::$settingsParsed) {
-            if (!is_null($configPath)) {
-                self::$configPath = realpath($configPath);
-            }
-            if (!is_null(self::$configPath)) {
-                try {
-                    $parser = new ConfigParser(self::$configPath);
-                    $settings = $parser->parse();
-                } catch (RuntimeException $exception) {
-                    if (self::ENV_PROD != self::$settings['env']) {
-                        throw $exception;
-                    }
-                }
-                self::$settings += $settings;
-            }
-            self::$settingsParsed = TRUE;
+        if (self::$settingsParsed) {
+            return self::$settings;
         }
+
+        self::$configPath = is_null($configPath) ? NULL : realpath($configPath);
+        switch ($env) {
+            case 'development':
+                $env = self::ENV_DEV;
+                break;
+            default:
+                $env = self::ENV_PROD;
+        }
+        self::$settings = $settings + array(
+            'env' => $env,
+        );
+
+        if (
+            self::checkRequirements() &&
+            !is_null(self::$configPath)
+        ) {
+            try {
+                $parser = new ConfigParser(self::$configPath);
+                $settings = $parser->parse();
+            } catch (RuntimeException $exception) {
+                if (self::ENV_PROD != self::$settings['env']) {
+                    throw $exception;
+                }
+                self::$settings['launch'] = FALSE;
+                $settings = array();
+            }
+            self::$settings += $settings;
+        }
+        self::$settings += array(
+            'shortAlias' => 'd',
+        );
+        self::$settingsParsed = TRUE;
 
         return self::$settings;
     }

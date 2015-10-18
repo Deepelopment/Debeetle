@@ -8,6 +8,8 @@
 
 namespace Deepelopment\Debeetle;
 
+use Deepelopment\Debeetle\View\Stub;
+
 /**
  * PHP Debug Tool main stub class.
  *
@@ -115,7 +117,7 @@ class Tool_Stub implements ITool
      */
     public function getView()
     {
-        return new Debeetle_View_Stub();
+        return new Stub();
     }
 
     /**

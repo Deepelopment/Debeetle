@@ -17,7 +17,7 @@ use Deepelopment\Debeetle\Tree;
  * @package Deepelopment/Debeetle
  * @author  deepeloper ({@see https://github.com/deepeloper})
  */
-class Debeetle_View_Stub implements IView
+class Stub implements IView
 {
     /**
      * Returns code initializing debugger.

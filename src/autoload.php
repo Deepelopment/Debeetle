@@ -24,9 +24,11 @@ $_DEEBETLE_STARTUP_STATE = array(
 
 Deepelopment\Debeetle\Loader::startup(
     $GLOBALS['_DEBEETLE_CONFIG_PATH'],
-    $GLOBALS['_DEBEETLE_ENV'],
     $GLOBALS['_DEBEETLE_SCRIPT_STARTUP_STATE'],
     $_DEEBETLE_STARTUP_STATE,
+    isset($GLOBALS['_DEBEETLE_ENV'])
+        ? $GLOBALS['_DEBEETLE_ENV']
+        : 'production',
     isset($GLOBALS['_DEBEETLE_CUSTOM_SETTINGS'])
         ? $GLOBALS['_DEBEETLE_CUSTOM_SETTINGS']
         : array()
