@@ -20,5 +20,5 @@ if (empty($this)) {
     die;
 }
 ?>
-<a id="id_phpinfo" style="display: none;" href="<?php $this->_settings['path']['script']; ?>?plugin=<?php echo rawurlencode(get_class($this));?>" target="_blank">Open</a>
+<a id="id_phpinfo" style="display: none;" href="<?php $this->settings['path']['script']; ?>?plugin=<?php echo rawurlencode(get_class($this));?>" target="_blank">Open</a>
 <button onclick="$('#id_phpinfo')[0].click(); return true;">Open</button>

@@ -122,7 +122,7 @@ class Loader
                          * @var Debeetle_Plugin_Interface
                          */
                         $plugin = new $plugin;
-                        $plugin->setInstance($instance);
+                        $plugin->setInstance(self::$instance);
                         $plugin->init();
                     }
                 }
