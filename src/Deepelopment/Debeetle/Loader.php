@@ -147,11 +147,15 @@ class Loader
     /**
      * Parses and returns settings from passed configuration XML file.
      *
+     * @param  string $configPath
      * @return array
      */
-    public static function getSettings()
+    public static function getSettings($configPath = NULL)
     {
         if (!self::$settingsParsed) {
+            if (!is_null($configPath)) {
+                self::$configPath = realpath($configPath);
+            }
             if (!is_null(self::$configPath)) {
                 try {
                     $parser = new ConfigParser(self::$configPath);

@@ -29,96 +29,94 @@ class Tool implements ITool
      *
      * @var bool
      */
-    protected $_skip = TRUE;
+    protected $skip = TRUE;
 
     /**
      * Launch flag
      *
      * @var bool
      */
-    protected $_launch;
+    protected $launch;
 
     /**
      * Settings
      *
      * @var array
      */
-    protected $_settings;
+    protected $settings;
 
     /**
      * Tabs storage
      *
      * @var Tree
      */
-    protected $_tab;
+    protected $tab;
 
     /**
      * View
      *
      * @var IView
      */
-    protected $_view;
+    protected $view;
 
     /**
      * Default options
      *
      * @var array
      */
-    protected $_options = array();
+    protected $options = array();
 
     /**
      * Array of printed labels to limit output by label
      *
      * @var array
      */
-    protected $_labels = array();
+    protected $labels = array();
 
     /**
      * Plugins, array containing class names as keys and objects as values
      *
      * @var array
      */
-    protected $_plugins = array();
+    protected $plugins = array();
 
     /**
      * Virtual methods
      *
      * @var array
      */
-    protected $_methods = array();
+    protected $methods = array();
 
     /**
      * Trace info
      *
      * @var array|null
      */
-    protected $_trace;
+    protected $trace;
 
     /**
      * Internal benches
      *
      * @var array
      */
-    protected $_bench;
+    protected $bench;
 
     /**
-     * Constructor
-     *
      * @param array $settings  Array of settings
      * @see   Loader::startup()
      */
     public function __construct(array $settings)
     {
-        $this->_launch = !empty($settings['launch']);
-        if ($this->_launch) {
+        $this->launch = !empty($settings['launch']);
+        if ($this->launch) {
             $this->init($settings);
         }
     }
 
     /**
-     * Magic caller
+     * Magic caller.
      *
-     * Calls methods registred using Debeetle::registerMethod().
+     * Calls methods registred using self::registerMethod().
      *
      * @param  string $method  Method name
      * @param  array  $args    Arguments
@@ -130,9 +128,9 @@ class Tool implements ITool
     {
         $this->startInternalBench();
         $result = null;
-        if (isset($this->_methods[$method])) {
+        if (isset($this->methods[$method])) {
             $this->setTrace(1);
-            $result = call_user_func_array($this->_methods[$method], $args);
+            $result = call_user_func_array($this->methods[$method], $args);
             $this->resetTrace();
         }
         $this->finishInternalBench();
@@ -140,19 +138,19 @@ class Tool implements ITool
     }
 
     /**
-     * Save method caller
+     * Saves method caller.
      *
      * @param  int $offset  Offset in debug_backtrace() result
      * @return void
      */
     public function setTrace($offset)
     {
-        if (!$this->_trace) {
+        if (!$this->trace) {
             $trace =
                 version_compare(PHP_VERSION, '5.3.6', '>=')
                 ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)
                 : debug_backtrace();
-            $this->_trace = array(
+            $this->trace = array(
                 'file' => $trace[$offset]['file'],
                 'line' => $trace[$offset]['line']
             );
@@ -160,27 +158,27 @@ class Tool implements ITool
     }
 
     /**
-     * Returns method caller
+     * Returns method caller.
      *
      * @return array
      */
     public function getTrace()
     {
-        return $this->_trace;
+        return $this->trace;
     }
 
     /**
-     * Reset method caller
+     * Resets method caller.
      *
      * @return void
      */
     public function resetTrace()
     {
-        $this->_trace = null;
+        $this->trace = null;
     }
 
     /**
-     * Register method
+     * Registers method.
      *
      * @param  string   $name      Method name
      * @param  callback $handler   Method handler
@@ -200,7 +198,7 @@ class Tool implements ITool
         }
 
         // Check if method is already registered
-        if (!$override && isset($this->_methods[$name])) {
+        if (!$override && isset($this->methods[$name])) {
             throw new InvalidArgumentException(
                 sprintf(
                     "Method %s already registered",
@@ -215,9 +213,9 @@ class Tool implements ITool
             is_object($handler[0]) &&
             $handler[0] instanceof Debeetle_Plugin_Interface
         ) {
-            $this->_plugins[get_class($handler[0])] = $handler[0];
+            $this->plugins[get_class($handler[0])] = $handler[0];
         }
-        $this->_methods[$name] = $handler;
+        $this->methods[$name] = $handler;
     }
 
     /**
@@ -229,9 +227,9 @@ class Tool implements ITool
      */
     public function callPluginMethod($method, array $args = array())
     {
-        foreach (array_keys($this->_plugins) as $plugin) {
+        foreach (array_keys($this->plugins) as $plugin) {
             call_user_func_array(
-                array($this->_plugins[$plugin], $method),
+                array($this->plugins[$plugin], $method),
                 $args
             );
         }
@@ -244,7 +242,7 @@ class Tool implements ITool
      */
     public function getSettings()
     {
-        return $this->_settings;
+        return $this->settings;
     }
 
     /**
@@ -254,13 +252,13 @@ class Tool implements ITool
      */
     public function setInstance()
     {
-        foreach (array_keys($this->_plugins) as $plugin) {
-            $this->_plugins[$plugin]->setInstance($this);
+        foreach (array_keys($this->plugins) as $plugin) {
+            $this->plugins[$plugin]->setInstance($this);
         }
     }
 
     /**
-     * Set view instance
+     * Sets view instance.
      *
      * @param  IView $view  View object
      * @return void
@@ -269,7 +267,7 @@ class Tool implements ITool
     public function setView(IView $view)
     {
         if ($view instanceof IView) {
-            $this->_view = $view;
+            $this->view = $view;
         } else {
             throw new InvalidArgumentException(
                 sprintf(
@@ -281,26 +279,26 @@ class Tool implements ITool
     }
 
     /**
-     * Returns view instance
+     * Returns view instance.
      *
      * @return IView
      * @todo   Think about registerView
      */
     public function getView()
     {
-        if (!$this->_view) {
+        if (!$this->view) {
             /*
             $data = new Deepelopment_EventData(
                 array('class' => 'Debeetle_View_HTML')
             );
-            if (!$this->_skip) {
+            if (!$this->skip) {
                 $this->_evt->fire('bebeetle_on_get_view', $data);
             }
-            $this->_view = new $data->class($this->_settings);
+            $this->view = new $data->class($this->settings);
             */
-            $this->_view = new HTML($this->_settings);
+            $this->view = new HTML($this->settings);
             /*
-            if (!($this->_view instanceof IView)){
+            if (!($this->view instanceof IView)){
                 throw new Debeetle_Exception(
                     $data->class .
                         " must implement IView interface",
@@ -308,13 +306,14 @@ class Tool implements ITool
                 );
             }
             */
-            $this->_view->setTab($this->_tab);
+            $this->view->setTab($this->tab);
         }
-        return $this->_view;
+
+        return $this->view;
     }
 
     /**
-     * Set default options for methods supporting options
+     * Sets default options for methods supporting options.
      *
      * @param  string $target   Target method name
      * @param  array  $options  Array of options
@@ -322,15 +321,15 @@ class Tool implements ITool
      */
     public function setDefaultOptions($target, array $options)
     {
-        if ($this->_skip) {
+        if ($this->skip) {
             return;
         }
-        $this->_settings['defaults']['options'][$target] = $options;
+        $this->settings['defaults']['options'][$target] = $options;
         $this->setInstance($this);
     }
 
     /**
-     * Specify target tab
+     * Specifys target tab.
      *
      * Example:
      * <code>
@@ -345,18 +344,18 @@ class Tool implements ITool
      */
     public function tab($tab, $before = '')
     {
-        if ($this->_skip) {
+        if ($this->skip) {
             return;
         }
         $this->startInternalBench();
         /*
-        if (!$this->_settings['use_tabs'] || $tab === '') {
+        if (!$this->settings['use_tabs'] || $tab === '') {
             return;
         }
         */
         $options =
-            isset($this->_options['write'])
-            ? $this->_options['write']
+            isset($this->options['write'])
+            ? $this->options['write']
             : array();
         if(
             isset($options['encoding']) &&
@@ -372,12 +371,12 @@ class Tool implements ITool
                     );
             }
         }
-        $this->_tab->select($tab, $before, FALSE);
+        $this->tab->select($tab, $before, FALSE);
         $this->finishInternalBench();
     }
 
     /**
-     * Write string to debug output
+     * Writes string to debug output.
      *
      * Example:
      * <code>
@@ -392,17 +391,17 @@ class Tool implements ITool
      */
     public function write($string, array $options = array())
     {
-        if ($this->_skip) {
+        if ($this->skip) {
             return;
         }
         if (empty($options['skipInternalBench'])) {
             $this->startInternalBench();
         }
-        if (isset($this->_options['write'])) {
-            $options += $this->_options['write'];
+        if (isset($this->options['write'])) {
+            $options += $this->options['write'];
         }
         if (isset($options['tab'])) {
-            $tab = $this->_tab->getLast();
+            $tab = $this->tab->getLast();
             $caption = $options['tab'];
             if(
                 isset($options['encoding']) &&
@@ -416,12 +415,12 @@ class Tool implements ITool
                         $options['encoding']
                     );
             }
-            $this->_tab->select($caption);
+            $this->tab->select($caption);
         }
         $string = $this->getView()->renderString($string, $options);
-        $this->_tab->send($string);
+        $this->tab->send($string);
         if (isset($tab)) {
-            $this->_tab->select($tab);
+            $this->tab->select($tab);
         }
         if (empty($options['skipInternalBench'])) {
             $this->finishInternalBench();
@@ -429,7 +428,7 @@ class Tool implements ITool
     }
 
     /**
-     * Verify printing data by label condition
+     * Verifys printing data by label condition.
      *
      * @param  string $method   Debeetle method name
      * @param  string $label    Label
@@ -438,46 +437,44 @@ class Tool implements ITool
      */
     public function checkLabel($method, $label, array $options)
     {
-        if (empty($this->_labels[$method])) {
-            $this->_labels[$method] = array();
+        if (empty($this->labels[$method])) {
+            $this->labels[$method] = array();
         }
-        if (empty($this->_labels[$method][$label])) {
-            $this->_labels[$method][$label] = 1;
+        if (empty($this->labels[$method][$label])) {
+            $this->labels[$method][$label] = 1;
         } else {
-            $this->_labels[$method][$label]++;
+            $this->labels[$method][$label]++;
         }
         return
             empty($options['label_limit'])
             ? TRUE
-            : $this->_labels[$method][$label] <= $options['label_limit'];
+            : $this->labels[$method][$label] <= $options['label_limit'];
     }
 
     /**
-     * Returns internal benches
+     * Returns internal benches.
      *
      * @return array
      */
     public function getInternalBenches()
     {
-        return $this->_bench;
+        return $this->bench;
     }
 
     /**
-     * Initialize Debeetle according to the settings
-     *
      * @param  array $settings  Array of settings
      * @return void
      */
     protected function init(array $settings)
     {
-        $this->_bench = array(
+        $this->bench = array(
             'scriptStartupState' => $settings['scriptStartupState'],
             'startupState'       => $settings['startupState'],
             'skip'            => FALSE,
             'pmu'             => function_exists('memory_get_peak_usage')
         );
         unset($settings['scriptStartupState'], $settings['startupState']);
-        $this->_settings =
+        $this->settings =
             $settings +
             array(
                 'cookieName'   => 'debeetle_' . md5($_SERVER['HTTP_HOST']),
@@ -488,7 +485,7 @@ class Tool implements ITool
             );
 
         $request = new Request;
-        $cookie = $request->get($this->_settings['cookieName'], null, INPUT_COOKIE);
+        $cookie = $request->get($this->settings['cookieName'], null, INPUT_COOKIE);
         if ($cookie) {
             $cookie = json_decode($cookie, TRUE);
             if(!is_array($cookie)){
@@ -497,51 +494,51 @@ class Tool implements ITool
         } else {
             $cookie = array();
         }
-        $this->_settings['clientCookie'] = $cookie;
-        $this->_skip = empty($this->_settings['clientCookie']['launch']);
+        $this->settings['clientCookie'] = $cookie;
+        $this->skip = empty($this->settings['clientCookie']['launch']);
         if (
             isset($cookie['disabledTabs']) &&
             is_array($cookie['disabledTabs'])
         ) {
             // var_dump($cookie['disabledTabs']);#die;###
-            $this->_settings['disabledTabs']['client'] =
+            $this->settings['disabledTabs']['client'] =
                 $cookie['disabledTabs'];
         }
-        $this->_tab = new Tree($this->_settings);
-        #var_dump($this->_settings['disabledTabs']);die;###
+        $this->tab = new Tree($this->settings);
+        #var_dump($this->settings['disabledTabs']);die;###
 
         /*
-        if (!$this->_skip) {
+        if (!$this->skip) {
             $this->_evt = new Deepelopment_Event;
         }
         */
 
         $scanForDefaults =
-            empty($this->_settings['defaults']['skin']) ||
-            empty($this->_settings['defaults']['theme']);
+            empty($this->settings['defaults']['skin']) ||
+            empty($this->settings['defaults']['theme']);
         if (
             $scanForDefaults ||
             (
                 !in_array(
                     'Settings',
-                    $this->_settings['disabledTabs']['server']
+                    $this->settings['disabledTabs']['server']
                 ) &&
                 !in_array(
                     'Settings|Panel',
-                    $this->_settings['disabledTabs']['server']
+                    $this->settings['disabledTabs']['server']
                 )
             )
         ) {
             $skins = array();
             $skinDir = new DirectoryIterator(
-                $this->_settings['path']['resources'] . '/skin'
+                $this->settings['path']['resources'] . '/skin'
             );
             foreach ($skinDir as $skin) {
                 if ($skin->isDot() || !$skin->isDir()) {
                     continue;
                 }
                 $themePath =
-                    $this->_settings['path']['resources'] . '/skin/' .
+                    $this->settings['path']['resources'] . '/skin/' .
                     $skin->getBasename() . '/theme';
                 if (!is_dir($themePath)) {
                     continue;
@@ -563,66 +560,74 @@ class Tool implements ITool
                 }
             }
             if (sizeof($skins)) {
-                $this->_settings['skins'] = $skins;
+                $this->settings['skins'] = $skins;
                 if ($scanForDefaults) {
                     list($skin, $themes) = each($skins);
                     list(, $theme) = each($themes);
-                    $this->_settings['defaults'] += array(
+                    $this->settings['defaults'] += array(
                         'skin'  => $skin,
                         'theme' => $theme
                     );
                 }
             }
         }
-        $this->_bench['onLoad'] = array(
+        $this->bench['onLoad'] = array(
             'includedFiles'   =>
                 sizeof(get_included_files()) -
-                $this->_bench['startupState']['includedFiles'] + 1,
+                $this->bench['startupState']['includedFiles'] + 1,
             'peakMemoryUsage' => 0,
             'memoryUsage'     =>
-                memory_get_usage() - $this->_bench['startupState']['memoryUsage']
+                memory_get_usage() - $this->bench['startupState']['memoryUsage']
         );
-        if ($this->_bench['pmu']) {
-            $this->_bench['onLoad']['peakMemoryUsage'] =
+        if ($this->bench['pmu']) {
+            $this->bench['onLoad']['peakMemoryUsage'] =
                 memory_get_peak_usage() -
-                $this->_bench['startupState']['peakMemoryUsage'];
+                $this->bench['startupState']['peakMemoryUsage'];
         }
-        $this->_bench['onLoad']['time'] =
+        $this->bench['onLoad']['time'] =
             microtime(TRUE) -
-            $this->_bench['startupState']['time'];
-        $this->_bench['total'] = $this->_bench['onLoad'] + array('qty' => 0);
+            $this->bench['startupState']['time'];
+        $this->bench['total'] = $this->bench['onLoad'] + array('qty' => 0);
     }
 
+    /**
+     * @return void
+     * @todo Describe
+     */
     protected function startInternalBench()
     {
-        $this->_bench['total']['qty']++;
-        $this->_bench['current'] = array(
+        $this->bench['total']['qty']++;
+        $this->bench['current'] = array(
             'includedFiles'   => sizeof(get_included_files()),
             'memoryUsage'     => memory_get_usage(),
             'peakMemoryUsage' =>
-                $this->_bench['pmu']
+                $this->bench['pmu']
                     ? memory_get_peak_usage()
                     : 0,
             'time'            => microtime(TRUE)
         );
-        // $e = new Exception;echo '<pre>'/*, var_export($this->_bench['current'], TRUE)*/, $e->getTraceAsString(), '</pre>';###
+        // $e = new Exception;echo '<pre>'/*, var_export($this->bench['current'], TRUE)*/, $e->getTraceAsString(), '</pre>';###
     }
 
+    /**
+     * @return void
+     * @todo Describe
+     */
     protected function finishInternalBench()
     {
-        // $e = new Exception;echo '<pre>'/*, var_export($this->_bench['current'], TRUE)*/, $e->getTraceAsString(), '</pre>';###
-        $this->_bench['total']['includedFiles'] +=
+        // $e = new Exception;echo '<pre>'/*, var_export($this->bench['current'], TRUE)*/, $e->getTraceAsString(), '</pre>';###
+        $this->bench['total']['includedFiles'] +=
             sizeof(get_included_files()) -
-            $this->_bench['current']['includedFiles'];
-        $this->_bench['total']['memoryUsage'] +=
-            memory_get_usage() - $this->_bench['current']['memoryUsage'];
-        if ($this->_bench['pmu']) {
-            $this->_bench['total']['peakMemoryUsage'] +=
+            $this->bench['current']['includedFiles'];
+        $this->bench['total']['memoryUsage'] +=
+            memory_get_usage() - $this->bench['current']['memoryUsage'];
+        if ($this->bench['pmu']) {
+            $this->bench['total']['peakMemoryUsage'] +=
                 memory_get_peak_usage() -
-                $this->_bench['current']['peakMemoryUsage'];
+                $this->bench['current']['peakMemoryUsage'];
         }
-        $this->_bench['total']['time'] +=
-            microtime(TRUE) - $this->_bench['current']['time'];
-        unset($this->_bench['current']);
+        $this->bench['total']['time'] +=
+            microtime(TRUE) - $this->bench['current']['time'];
+        unset($this->bench['current']);
     }
 }

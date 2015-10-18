@@ -8,6 +8,7 @@
 
 namespace Deepelopment\Debeetle\View;
 
+use DirectoryIterator;
 use Deepelopment\Debeetle\IView;
 use Deepelopment\Debeetle\Tree;
 use Deepelopment\Debeetle\Tree\Node;
@@ -72,6 +73,7 @@ class HTML implements IView
     public function addScope(array $scope)
     {
         $this->_scope = array_merge_recursive($this->_scope , $scope);
+
         return $this;
     }
 
@@ -139,7 +141,7 @@ class HTML implements IView
             ) {
                 continue;
             }
-            d::t($tab); // $place
+            $shortAlias::t($tab);
             $content =
                 file_get_contents(
                     $this->_settings['path']['resources'] . "/tabs/{$file}"
@@ -148,7 +150,7 @@ class HTML implements IView
                 if ('Debeetle|Settings|Tabs' === $tab) {
                     $tabSettingsContent = $content;
                 } else {
-                    d::w(
+                    $shortAlias::w(
                         $content,
                         array('htmlEntities' => FALSE, 'nl2br' => FALSE)
                     );
@@ -157,13 +159,13 @@ class HTML implements IView
             unset($content);
             if ($tab === 'Debeetle|Resource usage' && $this->_settings['developerMode']) {
                 $shortAlias::getInstance()->callPluginMethod('displaySettings');
-                d::t($tab);
+                $shortAlias::t($tab);
                 $bench = $shortAlias::getInstance()->getInternalBenches();
                 ob_start();
                 require_once
                     $this->_settings['path']['resources'] .
                     '/tabs/Debeetle.resourceUsage.phtml';
-                d::w(
+                $shortAlias::w(
                     ob_get_clean(),
                     array('htmlEntities' => FALSE, 'nl2br' => FALSE)
                 );
@@ -175,8 +177,8 @@ class HTML implements IView
             // echo '<pre>';var_dump($this->_tab->getTree());die;###
             $html = $this->getTabSettings($this->_tab->getTree(), 0, '', FALSE);
             $content = str_replace('%%placeholder%%', $html, $tabSettingsContent);
-            d::t('Debeetle|Settings|Tabs');
-            d::w(
+            $shortAlias::t('Debeetle|Settings|Tabs');
+            $shortAlias::w(
                 $content,
                 array('htmlEntities' => FALSE, 'nl2br' => FALSE)
             );
@@ -370,11 +372,11 @@ class HTML implements IView
                         : 'Y/m/d H:i:s O (T)';
                 return
                     array(
-                        date($format, $iBench['scriptInitState'][$type])
+                        date($format, $iBench['scriptStartupState'][$type])
                     );
                 break;
             case 'pageTotalTime':
-                $toOmit = $iBench['scriptInitState']['time'];
+                $toOmit = $iBench['scriptStartupState']['time'];
                 if (in_array('debeetle', $omit)) {
                     $toOmit += $iBench['total']['time'];
                 }
@@ -383,7 +385,7 @@ class HTML implements IView
             case 'memoryUsage':
                 $toOmit = 0;
                 if (in_array('scriptInit', $omit)) {
-                    $toOmit += $iBench['scriptInitState'][$type];
+                    $toOmit += $iBench['scriptStartupState'][$type];
                 }
                 if (in_array('debeetle', $omit)) {
                     $toOmit += $iBench['total'][$type];
@@ -395,7 +397,7 @@ class HTML implements IView
                 if (function_exists('memory_get_peak_usage')) {
                     $toOmit = 0;
                     if (in_array('scriptInit', $omit)) {
-                        $toOmit += $iBench['scriptInitState'][$type];
+                        $toOmit += $iBench['scriptStartupState'][$type];
                     }
                     if (in_array('debeetle', $omit)) {
                         $toOmit += $iBench['total'][$type];
@@ -406,7 +408,7 @@ class HTML implements IView
             case 'includedFiles':
                 $toOmit = 1;
                 if (in_array('scriptInit', $omit)) {
-                    $toOmit += $iBench['scriptInitState'][$type];
+                    $toOmit += $iBench['scriptStartupState'][$type];
                 }
                 if (in_array('debeetle', $omit)) {
                     $toOmit += $iBench['total'][$type];
